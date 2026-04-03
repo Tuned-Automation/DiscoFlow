@@ -15,6 +15,7 @@ export const supabase = createClient(supabaseUrl ?? '', supabaseKey ?? '', {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    flowType: 'implicit',
   },
 });
 
@@ -33,7 +34,7 @@ export async function signInWithEmail(email) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: window.location.origin + window.location.pathname,
+      emailRedirectTo: window.location.origin + (import.meta.env.BASE_URL ?? '/'),
     },
   });
   if (error) throw error;
