@@ -1,0 +1,98 @@
+:root {
+  /* Color Palette - Dark Theme */
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-tertiary: #1a1a26;
+  --bg-elevated: #22222f;
+  --bg-hover: #2a2a38;
+  
+  /* Surface colors with glassmorphism */
+  --surface-glass: rgba(255, 255, 255, 0.03);
+  --surface-glass-hover: rgba(255, 255, 255, 0.06);
+  --surface-glass-border: rgba(255, 255, 255, 0.08);
+  
+  /* Accent - Electric blue/cyan */
+  --accent-primary: #00d4ff;
+  --accent-primary-dim: rgba(0, 212, 255, 0.15);
+  --accent-primary-glow: rgba(0, 212, 255, 0.3);
+  --accent-secondary: #7c5cff;
+  --accent-secondary-dim: rgba(124, 92, 255, 0.15);
+  
+  /* Speaker colors */
+  --speaker-interviewer: #00d4ff;
+  --speaker-interviewer-bg: rgba(0, 212, 255, 0.08);
+  --speaker-client: #ff6b9d;
+  --speaker-client-bg: rgba(255, 107, 157, 0.08);
+  
+  /* Status colors */
+  --success: #00e88f;
+  --warning: #ffb340;
+  --error: #ff4d6a;
+  --info: #00d4ff;
+  
+  /* Text */
+  --text-primary: #f0f0f5;
+  --text-secondary: #9595a8;
+  --text-tertiary: #5e5e72;
+  --text-inverse: #0a0a0f;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-xs: 0.6875rem;
+  --font-sm: 0.8125rem;
+  --font-base: 0.9375rem;
+  --font-md: 1.0625rem;
+  --font-lg: 1.25rem;
+  --font-xl: 1.5rem;
+  --font-2xl: 2rem;
+  --font-3xl: 2.5rem;
+  --font-4xl: 3.5rem;
+  
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.15);
+  --shadow-glow-strong: 0 0 40px rgba(0, 212, 255, 0.25);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Z-index */
+  --z-base: 1;
+  --z-elevated: 10;
+  --z-overlay: 100;
+  --z-modal: 1000;
+  --z-toast: 2000;
+}
