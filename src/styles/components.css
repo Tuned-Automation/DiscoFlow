@@ -426,3 +426,175 @@
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px var(--accent-primary-dim);
 }
+
+/* ===== Login View ===== */
+.login-view {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-10);
+  text-align: center;
+}
+
+.login-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-4);
+}
+
+.login-title {
+  font-size: var(--font-2xl);
+  font-weight: var(--weight-bold);
+  background: linear-gradient(135deg, var(--accent-primary), #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 var(--space-2);
+}
+
+.login-subtitle {
+  color: var(--text-tertiary);
+  font-size: var(--font-sm);
+  margin: 0 0 var(--space-2);
+}
+
+.login-hint {
+  margin-top: var(--space-3);
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+}
+
+.login-sent-icon {
+  font-size: 3rem;
+  margin: var(--space-4) 0 var(--space-3);
+}
+
+.login-sent-title {
+  font-size: var(--font-xl);
+  font-weight: var(--weight-semibold);
+  margin: 0 0 var(--space-3);
+}
+
+.login-sent-body {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  line-height: 1.6;
+}
+
+.login-error {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255, 77, 106, 0.1);
+  border: 1px solid rgba(255, 77, 106, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--error);
+  font-size: var(--font-sm);
+  text-align: left;
+}
+
+/* ===== Profile Cards (in ProfilesView modal) ===== */
+.modal-lg {
+  max-width: 680px;
+}
+
+.profile-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--surface-glass-border);
+}
+
+.profile-card:last-child {
+  border-bottom: none;
+}
+
+.profile-card-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-card-name {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.profile-card-meta {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.profile-card-context {
+  font-size: var(--font-sm);
+  color: var(--text-tertiary);
+  line-height: 1.5;
+  margin-bottom: var(--space-2);
+}
+
+.profile-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tag {
+  display: inline-block;
+  padding: 2px var(--space-3);
+  background: var(--accent-primary-dim);
+  color: var(--accent-primary);
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
+  font-weight: var(--weight-medium);
+}
+
+.profile-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* ===== Selected profile in SetupView ===== */
+.profile-none-hint {
+  color: var(--text-tertiary);
+  font-size: var(--font-sm);
+  margin: 0;
+}
+
+.selected-profile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--accent-primary-dim);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: var(--radius-md);
+}
+
+.selected-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.selected-profile-name {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.selected-profile-meta {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+

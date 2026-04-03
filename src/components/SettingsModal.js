@@ -1,7 +1,8 @@
 import { eventBus } from '../services/EventBus.js';
+import { supabase, signOut } from '../services/SupabaseService.js';
 
 /**
- * SettingsModal — API key configuration and model settings
+ * SettingsModal — API key configuration, model settings, and account info.
  */
 export class SettingsModal {
   constructor({ aiService, transcriptionService }) {
@@ -9,10 +10,13 @@ export class SettingsModal {
     this.transcription = transcriptionService;
   }
 
-  show() {
+  async show() {
     const anthropicKey = localStorage.getItem('discovery-anthropic-key') || '';
     const openaiKey = localStorage.getItem('discovery-openai-key') || '';
     const model = localStorage.getItem('discovery-model') || 'claude-sonnet-4-20250514';
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const userEmail = user?.email || '';
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -25,6 +29,18 @@ export class SettingsModal {
           <button class="btn btn-ghost btn-icon btn-sm" id="close-settings">&times;</button>
         </div>
         <div class="modal-body">
+
+          ${userEmail ? `
+          <div class="settings-section">
+            <div class="settings-section-title">Account</div>
+            <div class="settings-row">
+              <span class="settings-row-label">${userEmail}</span>
+              <button class="btn btn-ghost btn-sm" id="sign-out-btn">Sign out</button>
+            </div>
+          </div>
+          <div class="divider"></div>
+          ` : ''}
+
           <div class="settings-section">
             <div class="settings-section-title">API Keys</div>
             <div class="input-group">
@@ -61,15 +77,17 @@ export class SettingsModal {
 
     document.body.appendChild(overlay);
 
-    // Close
     const close = () => overlay.remove();
     overlay.querySelector('#close-settings').addEventListener('click', close);
     overlay.querySelector('#cancel-settings').addEventListener('click', close);
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) close();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+    overlay.querySelector('#sign-out-btn')?.addEventListener('click', async () => {
+      close();
+      await signOut();
+      eventBus.emit('auth:signed-out');
     });
 
-    // Save
     overlay.querySelector('#save-settings').addEventListener('click', () => {
       const newAnthropicKey = document.getElementById('anthropic-key').value.trim();
       const newOpenaiKey = document.getElementById('openai-key').value.trim();
@@ -79,14 +97,11 @@ export class SettingsModal {
       localStorage.setItem('discovery-openai-key', newOpenaiKey);
       localStorage.setItem('discovery-model', newModel);
 
-      // Apply settings
       this.ai.init(newAnthropicKey, newModel);
       this.transcription.init(newOpenaiKey);
 
       close();
       eventBus.emit('settings:saved');
-      
-      // Show confirmation toast
       this._showToast('Settings saved', 'success');
     });
   }
@@ -102,8 +117,6 @@ export class SettingsModal {
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
     container.appendChild(toast);
-    setTimeout(() => {
-      toast.remove();
-    }, 3000);
+    setTimeout(() => toast.remove(), 3000);
   }
 }
