@@ -86,6 +86,7 @@ export class ProfilesView {
         <label class="input-label" for="pf-tags">Tags (comma-separated)</label>
         <input class="input" id="pf-tags" placeholder="enterprise, SaaS, returning-client" />
       </div>
+      <div id="profile-form-error" style="display:none; color: var(--error); font-size: 0.85rem; margin-bottom: 0.5rem;"></div>
       <div class="template-form-actions">
         <button class="btn btn-ghost btn-sm" id="cancel-profile-form">Cancel</button>
         <button class="btn btn-primary btn-sm" id="save-profile-btn">Save Profile</button>
@@ -111,7 +112,8 @@ export class ProfilesView {
     });
 
     // Save profile
-    overlay.querySelector('#save-profile-btn')?.addEventListener('click', async () => {
+    const saveBtn = overlay.querySelector('#save-profile-btn');
+    saveBtn?.addEventListener('click', async () => {
       const name = overlay.querySelector('#pf-name').value.trim();
       if (!name) { overlay.querySelector('#pf-name').focus(); return; }
       const company = overlay.querySelector('#pf-company').value.trim();
@@ -120,19 +122,38 @@ export class ProfilesView {
       const tagsRaw = overlay.querySelector('#pf-tags').value.trim();
       const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
 
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+      this._hideFormError();
+
       try {
         await this.profileService.create({ name, company, role, context, tags });
-        // Refresh list
         const profiles = await this.profileService.getAll();
         overlay.querySelector('#profiles-list').innerHTML = profiles.map(p => this._renderProfileCard(p)).join('');
         overlay.querySelector('#profile-form').style.display = 'none';
         this._bindListEvents();
       } catch (err) {
         console.error('Failed to create profile', err);
+        this._showFormError(err.message || 'Failed to save. Please try again.');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Profile';
       }
     });
 
     this._bindListEvents();
+  }
+
+  _showFormError(msg) {
+    const el = this._overlay?.querySelector('#profile-form-error');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  _hideFormError() {
+    const el = this._overlay?.querySelector('#profile-form-error');
+    if (el) el.style.display = 'none';
   }
 
   _bindListEvents() {
