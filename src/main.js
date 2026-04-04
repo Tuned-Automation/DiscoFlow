@@ -11,6 +11,7 @@ import { SetupView } from './components/SetupView.js';
 import { SessionView } from './components/SessionView.js';
 import { ReviewView } from './components/ReviewView.js';
 import { SettingsModal } from './components/SettingsModal.js';
+import { OnboardingTour } from './components/OnboardingTour.js';
 
 class App {
   constructor() {
@@ -34,6 +35,9 @@ class App {
   }
 
   async _init() {
+    // Show a loading state immediately so there's never a blank screen
+    this._showLoading();
+
     // Listen for auth state changes (handles magic link callback)
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
@@ -50,6 +54,33 @@ class App {
     } else {
       this._showLogin();
     }
+  }
+
+  _showLoading() {
+    this.container.innerHTML = `
+      <div style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        flex-direction: column;
+        gap: 1rem;
+        color: var(--text-tertiary);
+      ">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="20" fill="url(#lg-load)" />
+          <path d="M12 20c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="20" cy="20" r="3" fill="#fff"/>
+          <defs>
+            <linearGradient id="lg-load" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#6366f1"/>
+              <stop offset="1" stop-color="#8b5cf6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span style="font-size: 0.875rem; letter-spacing: 0.05em;">Loading…</span>
+      </div>
+    `;
   }
 
   async _onSignedIn(user) {
@@ -116,6 +147,8 @@ class App {
     });
     setupView.render();
     this.currentView = setupView;
+    // Small delay so the DOM is fully painted before we measure element positions
+    setTimeout(() => OnboardingTour.showSetupTour(), 400);
   }
 
   showSession() {
@@ -129,6 +162,7 @@ class App {
     });
     sessionView.render();
     this.currentView = sessionView;
+    setTimeout(() => OnboardingTour.showSessionTour(), 400);
   }
 
   showReview() {
