@@ -221,6 +221,7 @@ export class SetupView {
           <label class="input-label" for="tpl-context">AI Context Prompt</label>
           <textarea class="textarea" id="tpl-context" rows="2" placeholder="Additional instructions for the AI about how to guide this type of interview..."></textarea>
         </div>
+        <div id="tpl-error" style="display:none; color: var(--error); font-size: 0.85rem; margin-bottom: 0.5rem;"></div>
         <div class="template-form-actions">
           <button class="btn btn-ghost btn-sm" id="tpl-cancel">Cancel</button>
           <button class="btn btn-primary btn-sm" id="tpl-save">Save Template</button>
@@ -233,7 +234,10 @@ export class SetupView {
       this._renderTemplateForm();
     });
 
-    container.querySelector('#tpl-save').addEventListener('click', async () => {
+    const saveBtn = container.querySelector('#tpl-save');
+    const errorEl = container.querySelector('#tpl-error');
+
+    saveBtn.addEventListener('click', async () => {
       const name = document.getElementById('tpl-name').value.trim();
       const intention = document.getElementById('tpl-intention').value.trim();
       const topicAreas = document.getElementById('tpl-topics').value.trim();
@@ -244,9 +248,21 @@ export class SetupView {
         return;
       }
 
-      await this.templateService.add({ name, intention, topicAreas, contextPrompt });
-      this.showTemplateForm = false;
-      this.render();
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+      errorEl.style.display = 'none';
+
+      try {
+        await this.templateService.add({ name, intention, topicAreas, contextPrompt });
+        this.showTemplateForm = false;
+        this.render();
+      } catch (err) {
+        console.error('Failed to save template', err);
+        errorEl.textContent = err.message || 'Failed to save. Please try again.';
+        errorEl.style.display = 'block';
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Template';
+      }
     });
   }
 
