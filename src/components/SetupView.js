@@ -18,6 +18,21 @@ export class SetupView {
   render() {
     const templates = this.templateService.getAll();
 
+    // Re-render just the template pills when custom templates finish loading
+    this._templatesHandler = () => {
+      const pillsEl = this.container.querySelector('#template-pills');
+      if (!pillsEl) return;
+      const allTemplates = this.templateService.getAll();
+      pillsEl.innerHTML = allTemplates.map(t => `
+        <div class="template-pill ${this.selectedTemplate?.id === t.id ? 'active' : ''}" data-template-id="${t.id}">
+          <span>${t.name}</span>
+          ${t.isCustom ? `<span class="delete-template" data-delete-id="${t.id}">&times;</span>` : ''}
+        </div>
+      `).join('');
+      this._bindTemplateEvents();
+    };
+    eventBus.on('templates:updated', this._templatesHandler);
+
     this.container.innerHTML = `
       <div class="setup-view">
         <div class="setup-header">
@@ -141,28 +156,7 @@ export class SetupView {
       this.render();
     });
 
-    // Template selection
-    this.container.querySelectorAll('.template-pill').forEach(pill => {
-      pill.addEventListener('click', async (e) => {
-        if (e.target.classList.contains('delete-template')) {
-          const id = e.target.dataset.deleteId;
-          await this.templateService.delete(id);
-          if (this.selectedTemplate?.id === id) this.selectedTemplate = null;
-          this.render();
-          return;
-        }
-
-        const id = pill.dataset.templateId;
-        this.selectedTemplate = this.templateService.getById(id);
-
-        if (this.selectedTemplate) {
-          document.getElementById('intention').value = this.selectedTemplate.intention;
-        }
-
-        this.container.querySelectorAll('.template-pill').forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-      });
-    });
+    this._bindTemplateEvents();
 
     // Add template button
     this.container.querySelector('#add-template-btn')?.addEventListener('click', () => {
@@ -266,5 +260,34 @@ export class SetupView {
     });
   }
 
-  destroy() {}
+  _bindTemplateEvents() {
+    this.container.querySelectorAll('.template-pill').forEach(pill => {
+      pill.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-template')) {
+          const id = e.target.dataset.deleteId;
+          await this.templateService.delete(id);
+          if (this.selectedTemplate?.id === id) this.selectedTemplate = null;
+          this.render();
+          return;
+        }
+
+        const id = pill.dataset.templateId;
+        this.selectedTemplate = this.templateService.getById(id);
+
+        if (this.selectedTemplate) {
+          document.getElementById('intention').value = this.selectedTemplate.intention || '';
+        }
+
+        this.container.querySelectorAll('.template-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+      });
+    });
+  }
+
+  destroy() {
+    if (this._templatesHandler) {
+      eventBus.off('templates:updated', this._templatesHandler);
+      this._templatesHandler = null;
+    }
+  }
 }

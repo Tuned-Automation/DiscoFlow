@@ -34,26 +34,25 @@ class App {
     this._init();
   }
 
-  async _init() {
+  _init() {
     // Show a loading state immediately so there's never a blank screen
     this._showLoading();
 
-    // Listen for auth state changes (handles magic link callback)
+    // onAuthStateChange fires INITIAL_SESSION from localStorage — no network
+    // round-trip needed, unlike getSession() which may refresh the token first.
     supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
+      if (event === 'INITIAL_SESSION') {
+        if (session?.user) {
+          await this._onSignedIn(session.user);
+        } else {
+          this._showLogin();
+        }
+      } else if (event === 'SIGNED_IN' && session) {
         await this._onSignedIn(session.user);
       } else if (event === 'SIGNED_OUT') {
         this._onSignedOut();
       }
     });
-
-    // Check for an existing session on load
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      await this._onSignedIn(session.user);
-    } else {
-      this._showLogin();
-    }
   }
 
   _showLoading() {
@@ -86,9 +85,10 @@ class App {
   async _onSignedIn(user) {
     this.sessionService.setUserId(user.id);
     this._loadSettings();
-    // Load templates and then show setup
-    await this.templateService.load();
+    // Show setup immediately with built-in templates; custom templates
+    // load in the background and the view updates reactively via the event bus.
     this.showSetup();
+    this.templateService.load();
   }
 
   _onSignedOut() {
