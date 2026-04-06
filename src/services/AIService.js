@@ -11,6 +11,7 @@ export class AIService {
     this.isGenerating = false;
     this.questionHistory = [];
     this.questionId = 0;
+    this._progressiveCount = 0;
   }
 
   init(apiKey, model) {
@@ -36,6 +37,7 @@ export class AIService {
     }
 
     this.isGenerating = true;
+    this._progressiveCount = 0;
     eventBus.emit('ai:generating-start');
 
     const systemPrompt = this._buildSystemPrompt(context);
@@ -88,7 +90,8 @@ export class AIService {
               const parsed = JSON.parse(data);
               if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
                 fullText += parsed.delta.text;
-                eventBus.emit('ai:generating-delta', { text: fullText });
+                const currentText = this._tryEmitProgress(fullText);
+                eventBus.emit('ai:generating-delta', { text: fullText, currentText });
               }
             } catch (e) {
               // Skip malformed JSON chunks
@@ -97,16 +100,18 @@ export class AIService {
         }
       }
 
-      // Parse the completed response into individual questions
-      const questions = this._parseQuestions(fullText);
-      questions.forEach(q => {
+      // Emit any question not yet progressively detected (the last one, which has no
+      // following numbered line to trigger it, plus any edge-case remainder)
+      const allParsed = this._parseQuestions(fullText);
+      const remaining = allParsed.slice(this._progressiveCount);
+      remaining.forEach(q => {
         q.id = ++this.questionId;
         q.asked = false;
         q.timestamp = Date.now();
         this.questionHistory.push(q);
       });
 
-      eventBus.emit('ai:questions-ready', { questions, rawText: fullText });
+      eventBus.emit('ai:questions-ready', { questions: remaining, rawText: fullText });
 
     } catch (err) {
       console.error('AI generation error:', err);
@@ -127,6 +132,50 @@ export class AIService {
 
   getQuestionHistory() {
     return [...this.questionHistory];
+  }
+
+  /**
+   * Detect newly completed questions in the streaming text and emit them immediately.
+   * A question is considered complete when the next numbered line has started streaming.
+   * Returns the in-progress (incomplete) portion of text for the streaming preview.
+   */
+  _tryEmitProgress(fullText) {
+    // Split on newline followed by a numbered question start (e.g. "\n2. " or "\n3) ")
+    const sections = fullText.split(/\n(?=\d+[\.\)]\s)/);
+
+    // All sections except the last are fully complete questions
+    const completeSections = sections.slice(0, -1);
+
+    for (let i = this._progressiveCount; i < completeSections.length; i++) {
+      const parsed = this._parseQuestions(completeSections[i]);
+      if (parsed.length > 0) {
+        const q = parsed[0];
+        q.id = ++this.questionId;
+        q.asked = false;
+        q.timestamp = Date.now();
+        this.questionHistory.push(q);
+        eventBus.emit('ai:question-ready', { question: q });
+        this._progressiveCount++;
+      }
+    }
+
+    // If the last section ends with a closing bracket, it's a fully-formed question
+    // whose completion we can't detect by the usual "next number started" heuristic.
+    const lastSection = sections[sections.length - 1] || '';
+    if (lastSection && /\]\s*$/.test(lastSection) && this._progressiveCount === completeSections.length) {
+      const parsed = this._parseQuestions(lastSection);
+      if (parsed.length > 0) {
+        const q = parsed[0];
+        q.id = ++this.questionId;
+        q.asked = false;
+        q.timestamp = Date.now();
+        this.questionHistory.push(q);
+        eventBus.emit('ai:question-ready', { question: q });
+        this._progressiveCount++;
+      }
+    }
+
+    return lastSection;
   }
 
   _buildSystemPrompt(context) {

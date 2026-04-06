@@ -139,6 +139,11 @@ h4 { font-size: var(--font-lg); }
   40% { transform: scale(1); opacity: 1; }
 }
 
+@keyframes cardPop {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 @keyframes waveform {
   0%, 100% { height: 4px; }
   50% { height: 20px; }

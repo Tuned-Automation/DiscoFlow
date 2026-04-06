@@ -26,6 +26,7 @@ export class SessionView {
     this.aiQuestions = [];
     this.isAIGenerating = false;
     this.streamingText = '';
+    this._renderedQuestionIds = new Set();
   }
 
   render() {
@@ -239,6 +240,7 @@ export class SessionView {
     eventBus.on('transcription:segment', (segment) => this._addTranscriptEntry(segment));
     eventBus.on('ai:generating-start', () => this._onAIStart());
     eventBus.on('ai:generating-delta', (data) => this._onAIDelta(data));
+    eventBus.on('ai:question-ready', (data) => this._onAIQuestionReady(data));
     eventBus.on('ai:questions-ready', (data) => this._onAIReady(data));
     eventBus.on('ai:generating-end', () => this._onAIEnd());
     eventBus.on('ai:error', (data) => this._showToast(data.message, 'error'));
@@ -321,7 +323,13 @@ export class SessionView {
   _onAIStart() {
     this.isAIGenerating = true;
     this.streamingText = '';
-    
+    this._renderedQuestionIds = new Set();
+
+    // Dim all question cards from previous generations
+    document.querySelectorAll('#ai-questions-list .ai-question').forEach(card => {
+      card.classList.add('prev-gen');
+    });
+
     const emptyEl = document.getElementById('ai-empty');
     if (emptyEl) emptyEl.style.display = 'none';
 
@@ -339,16 +347,66 @@ export class SessionView {
     document.getElementById('suggest-btn').textContent = '⏳ Thinking...';
   }
 
-  _onAIDelta({ text }) {
+  _onAIDelta({ text, currentText }) {
     this.streamingText = text;
-    const streamEl = document.getElementById('ai-streaming');
-    streamEl.innerHTML = `
-      <div class="ai-question" style="border-color: var(--accent-primary);">
-        <div class="ai-question-text" style="white-space: pre-wrap;">${this._escapeHtml(text)}</div>
+    // Thinking dots remain visible; cards appear via ai:question-ready as each completes.
+  }
+
+  _buildQuestionCard(q) {
+    const typeLabels = {
+      'deeper': { cls: 'type-deeper', text: '🔍 Deeper' },
+      'emotion': { cls: 'type-emotion', text: '❤️ Emotion' },
+      'edge case': { cls: 'type-edge-case', text: '⚡ Edge Case' },
+      'next': { cls: 'type-next', text: '➡️ Next Topic' },
+      'follow-up': { cls: 'type-follow-up', text: '➡️ Follow-up' }
+    };
+
+    const typeKey = (q.type || 'follow-up').toLowerCase();
+    const displayObj = typeLabels[typeKey] || { cls: 'type-follow-up', text: q.type };
+
+    const card = document.createElement('div');
+    card.className = 'ai-question';
+    card.dataset.questionId = q.id;
+    card.innerHTML = `
+      <div class="ai-question-text">${this._escapeHtml(q.text)}</div>
+      <div class="ai-question-meta">
+        <span class="ai-question-type ${displayObj.cls}">${displayObj.text}</span>
+        <div class="ai-question-actions">
+          ${q.rationale ? `<span class="badge badge-muted" title="${this._escapeHtml(q.rationale)}" style="cursor:help;">💡</span>` : ''}
+          <button class="btn btn-ghost btn-sm mark-asked-btn" data-qid="${q.id}" title="Mark as asked">✓ Asked</button>
+        </div>
       </div>
     `;
 
-    // Auto-scroll AI panel
+    card.querySelector('.mark-asked-btn').addEventListener('click', () => {
+      this.ai.markAsked(q.id);
+      card.classList.add('asked');
+    });
+
+    return card;
+  }
+
+  _onAIQuestionReady({ question }) {
+    const emptyEl = document.getElementById('ai-empty');
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    if (this._renderedQuestionIds.has(question.id)) return;
+    this._renderedQuestionIds.add(question.id);
+
+    // First card landed — kill thinking dots and re-enable the button immediately
+    if (this._renderedQuestionIds.size === 1) {
+      const streamEl = document.getElementById('ai-streaming');
+      streamEl.style.display = 'none';
+      streamEl.innerHTML = '';
+      document.getElementById('suggest-btn').disabled = false;
+      document.getElementById('suggest-btn').textContent = '⚡ Suggest Question';
+    }
+
+    const list = document.getElementById('ai-questions-list');
+    const card = this._buildQuestionCard(question);
+    list.appendChild(card);
+    this.session.addQuestion(question);
+
     const panel = document.getElementById('ai-panel-body');
     panel.scrollTop = panel.scrollHeight;
   }
@@ -358,50 +416,18 @@ export class SessionView {
     streamEl.style.display = 'none';
     streamEl.innerHTML = '';
 
+    // Only render questions that weren't already progressively emitted
+    const unrendered = (questions || []).filter(q => !this._renderedQuestionIds.has(q.id));
+    if (unrendered.length === 0) return;
+
     const list = document.getElementById('ai-questions-list');
-    
-    questions.forEach(q => {
-      const card = document.createElement('div');
-      card.className = 'ai-question';
-      card.dataset.questionId = q.id;
-      
-      const typeLabels = {
-        'deeper': { cls: 'type-deeper', text: '🔍 Deeper' },
-        'emotion': { cls: 'type-emotion', text: '❤️ Emotion' },
-        'edge case': { cls: 'type-edge-case', text: '⚡ Edge Case' },
-        'next': { cls: 'type-next', text: '➡️ Next Topic' },
-        'follow-up': { cls: 'type-follow-up', text: '➡️ Follow-up' }
-      };
-
-      const typeKey = (q.type || 'follow-up').toLowerCase();
-      const displayObj = typeLabels[typeKey] || { cls: 'type-follow-up', text: q.type };
-
-      card.innerHTML = `
-        <div class="ai-question-text">${this._escapeHtml(q.text)}</div>
-        <div class="ai-question-meta">
-          <span class="ai-question-type ${displayObj.cls}">${displayObj.text}</span>
-          <div class="ai-question-actions">
-            ${q.rationale ? `<span class="badge badge-muted" title="${this._escapeHtml(q.rationale)}" style="cursor:help;">💡</span>` : ''}
-            <button class="btn btn-ghost btn-sm mark-asked-btn" data-qid="${q.id}" title="Mark as asked">✓ Asked</button>
-          </div>
-        </div>
-      `;
-
+    unrendered.forEach(q => {
+      this._renderedQuestionIds.add(q.id);
+      const card = this._buildQuestionCard(q);
       list.appendChild(card);
       this.session.addQuestion(q);
     });
 
-    // Bind mark-as-asked buttons
-    list.querySelectorAll('.mark-asked-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const qid = parseInt(btn.dataset.qid);
-        this.ai.markAsked(qid);
-        const card = btn.closest('.ai-question');
-        card.classList.add('asked');
-      });
-    });
-
-    // Auto-scroll
     const panel = document.getElementById('ai-panel-body');
     panel.scrollTop = panel.scrollHeight;
   }
